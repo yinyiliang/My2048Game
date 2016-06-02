@@ -33,12 +33,14 @@ public class GameItem extends FrameLayout {
      * 初始化Item
      */
     private void initCardIem() {
-        //设置面板背景色，是由Fame拼起来的
+        //设置面板背景色
         setBackgroundColor(Color.GRAY);
+        //创建显示的TextView
         mTvNum = new TextView(getContext());
+        //设置TextView中的数字和背景色
         setNum(mCardShowNum);
 
-        //修改5 x 5 时字体太大
+        //当行列数增加时，应该缩小相应的字体大小
         int gameLines = Config.mSp.getInt(Config.KEY_GAME_LINES, 4);
         if (gameLines == 4) {
             mTvNum.setTextSize(35);

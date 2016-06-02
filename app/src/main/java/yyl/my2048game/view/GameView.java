@@ -66,6 +66,9 @@ public class GameView extends GridLayout implements View.OnTouchListener {
         initGameMatrix();
     }
 
+    /**
+     * 开始游戏
+     */
     public void startGame() {
         initGameMatrix();
         initGameView(Config.mItemSize);
@@ -77,18 +80,25 @@ public class GameView extends GridLayout implements View.OnTouchListener {
      */
     private void initGameMatrix() {
         //初始化矩阵
-        removeAllViews();
+        removeAllViews(); //移除之前游戏的所有布局
+        //重置游戏面板数据
         mScoreHistory = 0;
         Config.SCORE = 0;
         Config.mGameLines = Config.mSp.getInt(Config.KEY_GAME_LINES, 4);
         mGameLines = Config.mGameLines;
+        //矩阵数组
         mGameMatrix = new GameItem[mGameLines][mGameLines];
+        //历史记录数组
         mGameMatrixHistory = new int[mGameLines][mGameLines];
+        //辅助数组
         mCalList = new ArrayList<>();
+        //空格数组
         mBlanks = new ArrayList<>();
         mHighScore = Config.mSp.getInt(Config.KEY_HIGH_SCORE, 0);
+        //设置GridLayout的行列数
         setColumnCount(mGameLines);
         setRowCount(mGameLines);
+        //滑动事件监听
         setOnTouchListener(this);
 
         //初始化View参数
@@ -96,6 +106,7 @@ public class GameView extends GridLayout implements View.OnTouchListener {
         WindowManager wm = (WindowManager) getContext().getSystemService(Context.WINDOW_SERVICE);
         Display display = wm.getDefaultDisplay();
         display.getMetrics(metrics);
+        //Item小方块的大小控制
         Config.mItemSize = metrics.widthPixels / Config.mGameLines;
         initGameView(Config.mItemSize);
     }
@@ -278,9 +289,6 @@ public class GameView extends GridLayout implements View.OnTouchListener {
                         mTarget = 4096;
                         Game.getGameActivity().setGoal(4096);
                     } else {
-                        editor.putInt(Config.KEY_GAME_GOAL, 4096);
-                        mTarget = 4096;
-                        Game.getGameActivity().setGoal(4096);
                         Toast.makeText(getContext(), "大侠你已通关，恭喜！！", Toast.LENGTH_SHORT).show();
                     }
                     editor.apply();
@@ -446,15 +454,16 @@ public class GameView extends GridLayout implements View.OnTouchListener {
             for (int j = 0; j < mGameLines; j++) {
                 int currentNum = mGameMatrix[i][j].getNum();
                 if (currentNum != 0) { //如果当前这个数不为空
-                    if (mKeyItemNum == -1) { //如果还没有进行合并  就把当前的值赋给mKeyItemNum
+                    if (mKeyItemNum == -1) { //把当前的值赋给mKeyItemNum
                         mKeyItemNum = currentNum;
-                    } else {  //如果合并过了，就从mKeyItemNum中获取被合并的值*2,放入辅助数组中，并更新已获得的分数
-                        if (mKeyItemNum == currentNum) {
-                            mCalList.add(mKeyItemNum * 2);
-                            Config.SCORE += mKeyItemNum * 2;
+                    } else {
+                        if (mKeyItemNum == currentNum) { //比较前一个数字和其右边的数字是否相等
+                            mCalList.add(mKeyItemNum * 2);//如果相等，就将它们的和保存到辅助数组中
+                            Config.SCORE += mKeyItemNum * 2;//更新得分栏
 
-                            mKeyItemNum = -1;//控制在一次滑动中，已经合并过的数字不能进行第二次合并
+                            mKeyItemNum = -1;
                         } else {
+                            //如果不相等，则保存第一个数字到数组中，再用当前得到的数字去和下一个数字相比较
                             mCalList.add(mKeyItemNum);
                             mKeyItemNum = currentNum;
                         }
@@ -463,14 +472,17 @@ public class GameView extends GridLayout implements View.OnTouchListener {
                     continue;
                 }
             }
+            //当上面都比较完毕后，最后一个数字无法和更后的数字比较，就把它也保存到辅助数组中
             if (mKeyItemNum != -1) {
                 mCalList.add(mKeyItemNum);
             }
             //改变Item的值
             for (int j = 0; j < mCalList.size(); j++) {
+                //从辅助数组中提出保存了的数字一次摆放在游戏面板中
                 mGameMatrix[i][j].setNum(mCalList.get(j));
             }
             for (int m = mCalList.size(); m < mGameLines; m++) {
+                //其它的地方继续设置为0
                 mGameMatrix[i][m].setNum(0);
             }
             //重置行参数
@@ -486,21 +498,21 @@ public class GameView extends GridLayout implements View.OnTouchListener {
         for (int i = mGameLines - 1; i >= 0; i--) {
             for (int j = mGameLines - 1; j >= 0; j--) {
                 int currentNum = mGameMatrix[i][j].getNum();
-                if (currentNum != 0) { //如果当前这个数不为空
-                    if (mKeyItemNum == -1) { //如果还没有进行合并  就把当前的值赋给mKeyItemNum
+                if (currentNum != 0) {
+                    if (mKeyItemNum == -1) {
                         mKeyItemNum = currentNum;
-                    } else {  //如果合并过了，就从mKeyItemNum中获取被合并的值*2,放入辅助数组中，并更新已获得的分数
+                    } else {
                         if (mKeyItemNum == currentNum) {
                             mCalList.add(mKeyItemNum * 2);
                             Config.SCORE += mKeyItemNum * 2;
 
-                            mKeyItemNum = -1;//控制在一次滑动中，已经合并过的数字不能进行第二次合并
+                            mKeyItemNum = -1;
                         } else {
                             mCalList.add(mKeyItemNum);
                             mKeyItemNum = currentNum;
                         }
                     }
-                } else { //为空格则不作处理
+                } else {
                     continue;
                 }
             }
@@ -524,27 +536,27 @@ public class GameView extends GridLayout implements View.OnTouchListener {
     }
 
     /**
-     * 滑动事件：上
+     * 滑动事件：上  （想当于横过来的向左滑动，只要交换横坐标值和纵坐标值即可
      */
     private void swipeUp() {
         for (int i = 0; i < mGameLines; i++) {
             for (int j = 0; j < mGameLines; j++) {
                 int currentNum = mGameMatrix[j][i].getNum();
-                if (currentNum != 0) { //如果当前这个数不为空
-                    if (mKeyItemNum == -1) { //如果还没有进行合并  就把当前的值赋给mKeyItemNum
+                if (currentNum != 0) {
+                    if (mKeyItemNum == -1) {
                         mKeyItemNum = currentNum;
-                    } else {  //如果合并过了，就从mKeyItemNum中获取被合并的值*2,放入辅助数组中，并更新已获得的分数
+                    } else {
                         if (mKeyItemNum == currentNum) {
                             mCalList.add(mKeyItemNum * 2);
                             Config.SCORE += mKeyItemNum * 2;
 
-                            mKeyItemNum = -1;//控制在一次滑动中，已经合并过的数字不能进行第二次合并
+                            mKeyItemNum = -1;
                         } else {
                             mCalList.add(mKeyItemNum);
                             mKeyItemNum = currentNum;
                         }
                     }
-                } else { //为空格则不作处理
+                } else {
                     continue;
                 }
             }
@@ -565,7 +577,7 @@ public class GameView extends GridLayout implements View.OnTouchListener {
     }
 
     /**
-     * 滑动事件：下
+     * 滑动事件：下  (相当于横过来的向右滑动，更改横坐标值和纵坐标值即可
      */
     private void swipeDown() {
         for (int i = mGameLines - 1; i >= 0; i--) {
